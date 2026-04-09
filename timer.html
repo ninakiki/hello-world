@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FOCUS-ON TIMER</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  /* iOS 터치 지연 제거 */
+  button, input, label {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* ── CSS 변수 (테마 1 기본값) ── */
+  :root {
+    --body-bg: #8fa8b8;
+    --top-face-from: #9dbdd0;
+    --top-face-to: #7d9fb5;
+    --dial-from: #ffffff;
+    --dial-to: #e8e2d8;
+    --accent-solid: #c0392b;
+    --accent-shadow: rgba(192,57,43,0.45);
+    --title-fg: #1a2a35;
+    --motto-fg: #c0392b;
+    --knob-from: #f0ede8;
+    --knob-to: #c8c2b8;
+    --time-display-color: #1a2a35;
+    --fg-primary: rgba(255,255,255,0.88);
+    --fg-secondary: rgba(255,255,255,0.45);
+    --ui-input-bg: rgba(255,255,255,0.2);
+    --ui-border: rgba(255,255,255,0.3);
+  }
+
+  body {
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 60px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: url('https://png.pngtree.com/background/20250102/original/pngtree-abstract-blur-coffee-shop-or-cafe-restaurant-interior-picture-image_15505703.jpg') center / cover no-repeat;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* ── 3D Scene ── */
+  .timer-scene {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .timer-top-face {
+    width: 332px;
+    height: 22px;
+    background: linear-gradient(to bottom, var(--top-face-from) 0%, var(--top-face-to) 100%);
+    border-radius: 24px 24px 0 0;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.35);
+    transition: background 0.4s;
+  }
+
+  .desk-shadow {
+    width: 300px;
+    height: 22px;
+    margin-top: 2px;
+    background: radial-gradient(ellipse at center,
+      rgba(0,0,0,0.32) 0%, rgba(0,0,0,0.12) 55%, transparent 72%
+    );
+    border-radius: 50%;
+  }
+
+  /* ── 테마 선택 ── */
+  .theme-switcher {
+    display: flex;
+    gap: 12px;
+    margin-top: 14px;
+  }
+
+  .theme-swatch {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    border: 2.5px solid rgba(255,255,255,0.35);
+    cursor: pointer;
+    transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+    padding: 0;
+  }
+  .theme-swatch:hover { transform: scale(1.18); }
+  .theme-swatch.active {
+    border-color: rgba(255,255,255,0.95);
+    transform: scale(1.22);
+    box-shadow: 0 0 0 2px rgba(255,255,255,0.4), 0 2px 8px rgba(0,0,0,0.3);
+  }
+
+  /* ── Timer body ── */
+  .timer-body {
+    width: 336px;
+    background: var(--body-bg);
+    border-radius: 0 0 24px 24px;
+    padding: 18px 20px 20px;
+    box-shadow:
+      8px 12px 30px rgba(0,0,0,0.25),
+      -3px 0 12px rgba(0,0,0,0.12),
+      0 30px 50px rgba(0,0,0,0.3),
+      inset 0 1px 0 rgba(255,255,255,0.15),
+      inset 0 -2px 0 rgba(0,0,0,0.15);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    transition: background 0.4s;
+  }
+
+  /* ── Brand header ── */
+  .timer-header {
+    width: 100%;
+    display: flex;
+    justify-content: flex-start;
+    margin-bottom: 2px;
+  }
+  .brand-name {
+    color: var(--title-fg);
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    font-style: italic;
+    transition: color 0.4s;
+  }
+
+  .brand-text {
+    color: var(--fg-secondary);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-align: center;
+    transition: color 0.4s;
+  }
+
+  .title {
+    color: var(--title-fg);
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-align: center;
+    transition: color 0.4s;
+  }
+
+  .subtitle {
+    color: var(--fg-secondary);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    margin-top: -10px;
+    text-align: center;
+    transition: color 0.4s;
+  }
+
+  /* ── Dial ── */
+  .dial-wrapper {
+    position: relative;
+    width: 272px;
+    height: 272px;
+  }
+
+  .dial-bg {
+    width: 272px;
+    height: 272px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, var(--dial-from), var(--dial-to));
+    box-shadow:
+      0 4px 16px rgba(0,0,0,0.25),
+      inset 0 2px 6px rgba(255,255,255,0.8),
+      inset 0 -2px 4px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    transition: background 0.4s;
+  }
+
+  #timerSvg {
+    position: absolute;
+    top: 0; left: 0;
+    width: 272px;
+    height: 272px;
+  }
+
+  .dial-center {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  .time-display {
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--time-display-color);
+    line-height: 1;
+    letter-spacing: -0.02em;
+    transition: color 0.4s;
+  }
+
+  .time-unit {
+    font-size: 10px;
+    color: var(--title-fg);
+    opacity: 0.45;
+    letter-spacing: 0.12em;
+    margin-top: 2px;
+  }
+
+  .motto {
+    font-size: 8px;
+    color: var(--motto-fg);
+    letter-spacing: 0.07em;
+    margin-top: 5px;
+    font-style: italic;
+    transition: color 0.4s;
+  }
+
+  /* Knob */
+  .knob {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 38% 35%, var(--knob-from), var(--knob-to));
+    box-shadow:
+      0 2px 8px rgba(0,0,0,0.3),
+      inset 0 1px 2px rgba(255,255,255,0.9);
+    cursor: pointer;
+    z-index: 20;
+    transition: transform 0.1s, background 0.4s;
+  }
+  .knob:active { transform: translate(-50%, -50%) scale(0.94); }
+
+  /* ── Input row ── */
+  .input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .input-label {
+    color: var(--fg-primary);
+    font-size: 12px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: color 0.4s;
+  }
+
+  .minute-input {
+    flex: 1;
+    height: 36px;
+    border: none;
+    border-radius: 8px;
+    background: var(--ui-input-bg);
+    color: var(--fg-primary);
+    font-size: 16px;
+    font-weight: 600;
+    text-align: center;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+    transition: background 0.2s, color 0.4s;
+  }
+  .minute-input::placeholder { color: var(--fg-secondary); }
+  .minute-input:focus { background: var(--ui-input-bg); filter: brightness(1.15); }
+  .minute-input::-webkit-inner-spin-button,
+  .minute-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+
+  /* ── Quick select buttons ── */
+  .quick-row {
+    display: flex;
+    gap: 6px;
+    width: 100%;
+  }
+
+  .quick-btn {
+    flex: 1;
+    height: 32px;
+    border: 1.5px solid var(--ui-border);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--fg-primary);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.02em;
+  }
+  .quick-btn:hover { background: var(--ui-input-bg); border-color: var(--fg-primary); }
+  .quick-btn.active {
+    background: var(--ui-input-bg);
+    border-color: var(--fg-primary);
+    color: var(--fg-primary);
+    filter: brightness(1.2);
+  }
+
+  /* ── Controls ── */
+  .controls {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .btn {
+    flex: 1;
+    height: 42px;
+    border: none;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+    transition: all 0.15s;
+  }
+
+  .btn-start {
+    background: var(--accent-solid);
+    color: #fff;
+    box-shadow: 0 4px 12px var(--accent-shadow);
+    transition: background 0.4s, box-shadow 0.4s, transform 0.15s;
+  }
+  .btn-start:hover { filter: brightness(0.88); }
+  .btn-start:active { transform: scale(0.97); }
+
+  .btn-reset {
+    background: var(--ui-input-bg);
+    color: var(--fg-primary);
+    border: 1px solid var(--ui-border);
+    transition: background 0.2s, color 0.4s;
+  }
+  .btn-reset:hover { filter: brightness(1.1); }
+
+  /* ── Mute toggle ── */
+  .mute-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .mute-label {
+    color: var(--fg-secondary);
+    font-size: 12px;
+    transition: color 0.4s;
+  }
+
+  .mute-toggle {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    cursor: pointer;
+  }
+  .mute-toggle input { display: none; }
+  .mute-track {
+    position: absolute;
+    inset: 0;
+    border-radius: 12px;
+    background: var(--ui-input-bg);
+    transition: background 0.2s;
+  }
+  .mute-toggle input:checked + .mute-track { background: var(--accent-solid); }
+  .mute-thumb {
+    position: absolute;
+    top: 3px; left: 3px;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+    transition: transform 0.2s;
+  }
+  .mute-toggle input:checked ~ .mute-thumb { transform: translateX(20px); }
+
+  .mute-status {
+    color: var(--fg-secondary);
+    font-size: 12px;
+    min-width: 40px;
+    transition: color 0.4s;
+  }
+
+  .nelma {
+    color: var(--fg-secondary);
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    margin-top: -4px;
+    transition: color 0.4s;
+  }
+
+  /* Finish pulse */
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+  .finished .time-display {
+    animation: pulse 0.8s ease-in-out infinite;
+    color: var(--accent-solid) !important;
+  }
+</style>
+</head>
+<body>
+
+<div class="timer-scene">
+  <div class="timer-top-face"></div>
+
+  <div class="timer-body">
+    <div class="timer-header">
+      <span class="brand-name" id="brandText">neina.</span>
+    </div>
+
+    <div class="dial-wrapper">
+      <div class="dial-bg"></div>
+
+      <svg id="timerSvg" viewBox="0 0 220 220">
+        <g id="ticks"></g>
+        <path id="arcPath" fill="" stroke="none"/>
+        <circle cx="110" cy="110" r="96" fill="none" stroke="rgba(0,0,0,0.06)" stroke-width="1"/>
+      </svg>
+
+      <svg id="labelSvg" style="position:absolute;top:0;left:0;width:272px;height:272px;" viewBox="0 0 220 220">
+        <g id="labels"></g>
+      </svg>
+
+      <div class="dial-center" id="dialCenter">
+        <div class="time-display" id="timeDisplay">00:00</div>
+        <div class="time-unit">MINUTES</div>
+        <div class="motto" id="mottoText">Flow with your rhythm</div>
+      </div>
+
+      <div class="knob" id="knob" title="클릭하여 시작/일시정지"></div>
+    </div>
+
+    <div class="quick-row">
+      <button class="quick-btn" data-min="10">10분</button>
+      <button class="quick-btn" data-min="15">15분</button>
+      <button class="quick-btn" data-min="30">30분</button>
+      <button class="quick-btn" data-min="60">60분</button>
+    </div>
+
+    <div class="input-row">
+      <span class="input-label">직접 입력</span>
+      <input
+        class="minute-input"
+        type="number"
+        id="minuteInput"
+        min="1" max="60"
+        placeholder="1~60"
+      />
+      <span class="input-label">분</span>
+    </div>
+
+    <div class="controls">
+      <button class="btn btn-start" id="startBtn">시작</button>
+      <button class="btn btn-reset" id="resetBtn">초기화</button>
+    </div>
+
+    <div class="mute-row">
+      <span class="mute-label">알람 소리</span>
+      <label class="mute-toggle">
+        <input type="checkbox" id="muteToggle" />
+        <div class="mute-track"></div>
+        <div class="mute-thumb"></div>
+      </label>
+      <span class="mute-status" id="muteStatus">켜짐</span>
+    </div>
+
+  </div><!-- timer-body -->
+
+  <div class="desk-shadow"></div>
+
+  <!-- 테마 선택 -->
+  <div class="theme-switcher">
+    <button class="theme-swatch active" data-theme="blue"  style="background:#8fa8b8;" title="Blue"></button>
+    <button class="theme-swatch"        data-theme="navy"  style="background:#1a2d5a;" title="Navy"></button>
+    <button class="theme-swatch"        data-theme="green" style="background:#2d5a3d;" title="Green"></button>
+  </div>
+</div><!-- timer-scene -->
+
+<script>
+  const CX = 110, CY = 110, R = 96;
+
+  // ── 테마 정의 ──
+  const THEMES = {
+    blue: {
+      accent:     'rgba(192,57,43,0.88)',
+      tickMajor:  'rgba(50,70,80,0.5)',
+      tickMinor:  'rgba(50,70,80,0.2)',
+      labelColor: 'rgba(40,60,70,0.6)',
+      motto:      'Flow with your rhythm',
+      brand:      'nelma.',
+      vars: {
+        '--body-bg':            '#8fa8b8',
+        '--top-face-from':      '#9dbdd0',
+        '--top-face-to':        '#7d9fb5',
+        '--dial-from':          '#ffffff',
+        '--dial-to':            '#e8e2d8',
+        '--accent-solid':       '#c0392b',
+        '--accent-shadow':      'rgba(192,57,43,0.45)',
+        '--title-fg':           '#1a2a35',
+        '--motto-fg':           '#c0392b',
+        '--knob-from':          '#f0ede8',
+        '--knob-to':            '#c8c2b8',
+        '--time-display-color': '#1a2a35',
+        '--fg-primary':         'rgba(255,255,255,0.88)',
+        '--fg-secondary':       'rgba(255,255,255,0.45)',
+        '--ui-input-bg':        'rgba(255,255,255,0.2)',
+        '--ui-border':          'rgba(255,255,255,0.3)',
+      }
+    },
+    navy: {
+      accent:     'rgba(26,45,90,0.88)',
+      tickMajor:  'rgba(26,45,90,0.48)',
+      tickMinor:  'rgba(26,45,90,0.18)',
+      labelColor: 'rgba(26,45,90,0.62)',
+      motto:      'One thing at a time.',
+      brand:      'neina.',
+      vars: {
+        '--body-bg':            '#eee9d9',
+        '--top-face-from':      '#ddd6c4',
+        '--top-face-to':        '#c8c0ac',
+        '--dial-from':          '#faf6ee',
+        '--dial-to':            '#eee7d6',
+        '--accent-solid':       '#1a2d5a',
+        '--accent-shadow':      'rgba(26,45,90,0.45)',
+        '--title-fg':           '#1a2d5a',
+        '--motto-fg':           '#c8921a',
+        '--knob-from':          '#f8f4e4',
+        '--knob-to':            '#dbb52e',
+        '--time-display-color': '#1a2d5a',
+        '--fg-primary':         'rgba(26,45,90,0.78)',
+        '--fg-secondary':       'rgba(26,45,90,0.42)',
+        '--ui-input-bg':        'rgba(26,45,90,0.06)',
+        '--ui-border':          'rgba(26,45,90,0.18)',
+      }
+    },
+    green: {
+      accent:     'rgba(45,90,61,0.88)',
+      tickMajor:  'rgba(45,90,61,0.45)',
+      tickMinor:  'rgba(45,90,61,0.18)',
+      labelColor: 'rgba(45,90,61,0.58)',
+      motto:      'Great things take time.',
+      brand:      'neina.',
+      vars: {
+        '--body-bg':            '#ede8dc',
+        '--top-face-from':      '#ddd7c8',
+        '--top-face-to':        '#c8c0ae',
+        '--dial-from':          '#f8f5ee',
+        '--dial-to':            '#ece6d8',
+        '--accent-solid':       '#2d5a3d',
+        '--accent-shadow':      'rgba(45,90,61,0.45)',
+        '--title-fg':           '#2d5a3d',
+        '--motto-fg':           '#d4603a',
+        '--knob-from':          '#f5f0e0',
+        '--knob-to':            '#c85030',
+        '--time-display-color': '#2d5a3d',
+        '--fg-primary':         'rgba(35,25,15,0.82)',
+        '--fg-secondary':       'rgba(35,25,15,0.45)',
+        '--ui-input-bg':        'rgba(0,0,0,0.07)',
+        '--ui-border':          'rgba(35,25,15,0.2)',
+      }
+    }
+  };
+
+  let currentTheme = THEMES.blue;
+
+  function applyTheme(key) {
+    const t = THEMES[key];
+    currentTheme = t;
+
+    // CSS 변수 적용
+    const root = document.documentElement;
+    Object.entries(t.vars).forEach(([k, v]) => root.style.setProperty(k, v));
+
+    // 텍스트 업데이트
+    document.getElementById('mottoText').textContent = t.motto;
+    document.getElementById('brandText').textContent = t.brand;
+
+    // SVG 아크 컬러
+    document.getElementById('arcPath').setAttribute('fill', t.accent);
+
+    // 다이얼 눈금 재드로우
+    drawDial();
+
+    // 스와치 active 상태
+    document.querySelectorAll('.theme-swatch').forEach(s => {
+      s.classList.toggle('active', s.dataset.theme === key);
+    });
+  }
+
+  // ── Draw tick marks & labels ──
+  function drawDial() {
+    const ticksG  = document.getElementById('ticks');
+    const labelsG = document.getElementById('labels');
+    ticksG.innerHTML  = '';
+    labelsG.innerHTML = '';
+
+    for (let i = 0; i <= 60; i++) {
+      const angle   = (i / 60) * 2 * Math.PI - Math.PI / 2;
+      const isMajor = i % 5 === 0;
+      const innerR  = isMajor ? R - 14 : R - 8;
+      const x1 = CX + R      * Math.cos(angle);
+      const y1 = CY + R      * Math.sin(angle);
+      const x2 = CX + innerR * Math.cos(angle);
+      const y2 = CY + innerR * Math.sin(angle);
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', x1); line.setAttribute('y1', y1);
+      line.setAttribute('x2', x2); line.setAttribute('y2', y2);
+      line.setAttribute('stroke', isMajor ? currentTheme.tickMajor : currentTheme.tickMinor);
+      line.setAttribute('stroke-width', isMajor ? '2' : '1');
+      ticksG.appendChild(line);
+
+      if (isMajor && i !== 0) {
+        const labelR = R - 20;
+        const lx = CX + labelR * Math.cos(angle);
+        const ly = CY + labelR * Math.sin(angle);
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('x', lx);
+        text.setAttribute('y', ly);
+        text.setAttribute('text-anchor', 'middle');
+        text.setAttribute('dominant-baseline', 'central');
+        text.setAttribute('font-size', '9');
+        text.setAttribute('font-weight', '700');
+        text.setAttribute('fill', currentTheme.labelColor);
+        text.setAttribute('font-family', 'Arial,sans-serif');
+        text.textContent = i;
+        labelsG.appendChild(text);
+      }
+    }
+  }
+
+  // ── Draw pie arc ──
+  function drawArc(fraction) {
+    const path = document.getElementById('arcPath');
+    path.setAttribute('fill', currentTheme.accent);
+    if (fraction <= 0) { path.setAttribute('d', ''); return; }
+    if (fraction >= 1) {
+      path.setAttribute('d', `M ${CX},${CY} m -${R},0 a ${R},${R} 0 1,1 ${2*R},0 a ${R},${R} 0 1,1 -${2*R},0`);
+      return;
+    }
+    const startAngle = -Math.PI / 2;
+    const endAngle   = startAngle + fraction * 2 * Math.PI;
+    const x1 = CX + R * Math.cos(startAngle);
+    const y1 = CY + R * Math.sin(startAngle);
+    const x2 = CX + R * Math.cos(endAngle);
+    const y2 = CY + R * Math.sin(endAngle);
+    const largeArc = fraction > 0.5 ? 1 : 0;
+    path.setAttribute('d',
+      `M ${CX},${CY} L ${x1},${y1} A ${R},${R} 0 ${largeArc},1 ${x2},${y2} Z`
+    );
+  }
+
+  // ── Audio ──
+  let audioCtx = null;
+
+  function getCtx() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    return audioCtx;
+  }
+
+  function playBell(ctx, startTime) {
+    [[880, 0.30], [1320, 0.18], [1760, 0.10], [2200, 0.06]].forEach(([freq, vol]) => {
+      const osc  = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(vol, startTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 1.4);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(startTime);
+      osc.stop(startTime + 1.4);
+    });
+  }
+
+  function playAlarm() {
+    if (document.getElementById('muteToggle').checked) return;
+    const ctx = getCtx();
+    for (let i = 0; i < 5; i++) playBell(ctx, ctx.currentTime + i * 0.55);
+  }
+
+  document.getElementById('muteToggle').addEventListener('change', function () {
+    document.getElementById('muteStatus').textContent = this.checked ? '꺼짐' : '켜짐';
+  });
+
+  // ── State ──
+  let totalSeconds    = 0;
+  let remainingSeconds = 0;
+  let running  = false;
+  let intervalId = null;
+
+  const timeDisplay = document.getElementById('timeDisplay');
+  const startBtn    = document.getElementById('startBtn');
+  const resetBtn    = document.getElementById('resetBtn');
+  const minuteInput = document.getElementById('minuteInput');
+  const dialCenter  = document.getElementById('dialCenter');
+
+  function formatTime(sec) {
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  }
+
+  function updateDisplay() {
+    timeDisplay.textContent = formatTime(remainingSeconds);
+    drawArc(remainingSeconds / 3600);
+  }
+
+  function tick() {
+    if (remainingSeconds <= 0) {
+      clearInterval(intervalId);
+      running = false;
+      startBtn.textContent = '시작';
+      dialCenter.classList.add('finished');
+      playAlarm();
+      return;
+    }
+    remainingSeconds--;
+    updateDisplay();
+  }
+
+  function setTime() {
+    const val = parseInt(minuteInput.value, 10);
+    if (isNaN(val) || val < 1 || val > 60) return;
+    clearInterval(intervalId);
+    running = false;
+    dialCenter.classList.remove('finished');
+    totalSeconds     = val * 60;
+    remainingSeconds = totalSeconds;
+    startBtn.textContent = '시작';
+    updateDisplay();
+  }
+
+  function toggleStart() {
+    if (remainingSeconds <= 0 && !running) return;
+    dialCenter.classList.remove('finished');
+    if (running) {
+      clearInterval(intervalId);
+      running = false;
+      startBtn.textContent = '시작';
+    } else {
+      if (remainingSeconds <= 0) return;
+      running = true;
+      startBtn.textContent = '일시정지';
+      intervalId = setInterval(tick, 1000);
+    }
+  }
+
+  function reset() {
+    clearInterval(intervalId);
+    running = false;
+    dialCenter.classList.remove('finished');
+    totalSeconds     = 0;
+    remainingSeconds = 0;
+    minuteInput.value = '';
+    document.querySelectorAll('.quick-btn').forEach(b => b.classList.remove('active'));
+    startBtn.textContent = '시작';
+    updateDisplay();
+  }
+
+  function setTimeFromMinutes(min) {
+    clearInterval(intervalId);
+    running = false;
+    dialCenter.classList.remove('finished');
+    totalSeconds     = min * 60;
+    remainingSeconds = totalSeconds;
+    startBtn.textContent = '시작';
+    document.querySelectorAll('.quick-btn').forEach(b => {
+      b.classList.toggle('active', parseInt(b.dataset.min) === min);
+    });
+    updateDisplay();
+  }
+
+  // ── Event listeners ──
+  startBtn.addEventListener('click', toggleStart);
+  document.getElementById('knob').addEventListener('click', toggleStart);
+  resetBtn.addEventListener('click', reset);
+
+  minuteInput.addEventListener('input', () => {
+    const val = parseInt(minuteInput.value, 10);
+    if (!isNaN(val) && val >= 1 && val <= 60) {
+      document.querySelectorAll('.quick-btn').forEach(b => b.classList.remove('active'));
+      setTime();
+    }
+  });
+  minuteInput.addEventListener('keydown', e => { if (e.key === 'Enter') minuteInput.blur(); });
+
+  document.querySelectorAll('.quick-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      minuteInput.value = btn.dataset.min;
+      setTimeFromMinutes(parseInt(btn.dataset.min));
+    });
+  });
+
+  document.querySelectorAll('.theme-swatch').forEach(swatch => {
+    swatch.addEventListener('click', () => applyTheme(swatch.dataset.theme));
+  });
+
+  // ── Init ──
+  applyTheme('green');
+  drawArc(0);
+</script>
+</body>
+</html>
