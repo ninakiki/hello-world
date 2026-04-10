@@ -1,4 +1,4 @@
-<!-- Last modified: 2026-04-10 11:03:53 -->
+<!-- Last modified: 2026-04-10 11:05:19 -->
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -805,6 +805,7 @@
   });
 
   minuteInput.addEventListener('input', () => {
+    minuteInput.value = minuteInput.value.replace(/[^0-9]/g, '');
     let val = parseInt(minuteInput.value, 10);
     if (isNaN(val) || val < 1) return;
     if (val > 60) { val = 60; minuteInput.value = 60; }
