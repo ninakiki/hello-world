@@ -1,4 +1,4 @@
-<!-- Last modified: 2026-04-10 11:11:53 -->
+<!-- Last modified: 2026-04-10 11:19:50 -->
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -76,9 +76,8 @@
   /* ── 테마 선택 ── */
   .theme-switcher {
     display: flex;
-    gap: 8px;
+    gap: 7px;
     align-items: center;
-    flex-shrink: 0;
   }
 
   .theme-swatch {
@@ -178,8 +177,8 @@
 
   .dial-center {
     position: absolute;
-    top: 50%; left: 50%;
-    transform: translate(-50%, calc(-50% - 30px));
+    top: 62%; left: 50%;
+    transform: translate(-50%, -50%);
     text-align: center;
     z-index: 10;
     pointer-events: none;
@@ -200,9 +199,9 @@
 
   .motto {
     position: absolute;
-    top: 62%;
+    top: 50%;
     left: 50%;
-    transform: translateX(-50%);
+    transform: translate(-50%, calc(-50% - 30px));
     font-size: 8px;
     color: var(--motto-fg);
     letter-spacing: 0.07em;
@@ -325,16 +324,25 @@
     transition: all 0.15s;
   }
 
-  .btn-start { flex: 1; }
+  .btn-start, .btn-resume { flex: 1; }
+  .btn-pause { flex: 1; }
 
-  .btn-start {
+  .btn-start, .btn-resume {
     background: var(--accent-solid);
     color: #fff;
     box-shadow: 0 4px 12px var(--accent-shadow);
     transition: background 0.4s, box-shadow 0.4s, transform 0.15s;
   }
-  .btn-start:hover { filter: brightness(0.88); }
-  .btn-start:active { transform: scale(0.97); }
+  .btn-start:hover, .btn-resume:hover { filter: brightness(0.88); }
+  .btn-start:active, .btn-resume:active { transform: scale(0.97); }
+
+  .btn-pause, .btn-reset {
+    background: var(--ui-input-bg);
+    color: var(--fg-primary);
+    border: 1px solid var(--ui-border);
+    transition: background 0.2s, color 0.4s;
+  }
+  .btn-pause:hover, .btn-reset:hover { filter: brightness(1.1); }
 
   .btn-reset {
     flex: 0 0 auto;
@@ -342,12 +350,7 @@
     height: 36px;
     align-self: center;
     font-size: 12px;
-    background: var(--ui-input-bg);
-    color: var(--fg-primary);
-    border: 1px solid var(--ui-border);
-    transition: background 0.2s, color 0.4s;
   }
-  .btn-reset:hover { filter: brightness(1.1); }
 
   .input-sep {
     width: 1px;
@@ -491,8 +494,10 @@
     </div>
 
     <div class="controls">
-      <button class="btn btn-start" id="startBtn">시작</button>
-      <button class="btn btn-reset" id="resetBtn">초기화</button>
+      <button class="btn btn-start"  id="startBtn">시작</button>
+      <button class="btn btn-pause"  id="pauseBtn"  style="display:none">일시정지</button>
+      <button class="btn btn-resume" id="resumeBtn" style="display:none">재시작</button>
+      <button class="btn btn-reset"  id="resetBtn">초기화</button>
       <div class="theme-switcher">
         <button class="theme-swatch active" data-theme="blue"  style="background:#8fa8b8;" title="Blue"></button>
         <button class="theme-swatch"        data-theme="navy"  style="background:#1a2d5a;" title="Navy"></button>
@@ -722,9 +727,18 @@
 
   const timeDisplay = document.getElementById('timeDisplay');
   const startBtn    = document.getElementById('startBtn');
+  const pauseBtn    = document.getElementById('pauseBtn');
+  const resumeBtn   = document.getElementById('resumeBtn');
   const resetBtn    = document.getElementById('resetBtn');
   const minuteInput = document.getElementById('minuteInput');
   const dialCenter  = document.getElementById('dialCenter');
+
+  function setButtonState(state) {
+    // state: 'idle' | 'running' | 'paused'
+    startBtn.style.display  = state === 'idle'    ? '' : 'none';
+    pauseBtn.style.display  = state === 'running' ? '' : 'none';
+    resumeBtn.style.display = state === 'paused'  ? '' : 'none';
+  }
 
   function updateDisplay() {
     const m = Math.floor(remainingSeconds / 60);
@@ -737,7 +751,7 @@
     if (remainingSeconds <= 0) {
       clearInterval(intervalId);
       running = false;
-      startBtn.textContent = '시작';
+      setButtonState('idle');
       dialCenter.classList.add('finished');
       playAlarm();
       return;
@@ -754,23 +768,36 @@
     dialCenter.classList.remove('finished');
     totalSeconds     = val * 60;
     remainingSeconds = totalSeconds;
-    startBtn.textContent = '시작';
+    setButtonState('idle');
     updateDisplay();
   }
 
-  function toggleStart() {
-    if (remainingSeconds <= 0 && !running) return;
+  function doStart() {
+    if (remainingSeconds <= 0) return;
     dialCenter.classList.remove('finished');
-    if (running) {
-      clearInterval(intervalId);
-      running = false;
-      startBtn.textContent = '시작';
-    } else {
-      if (remainingSeconds <= 0) return;
-      running = true;
-      startBtn.textContent = '일시정지';
-      intervalId = setInterval(tick, 1000);
-    }
+    running = true;
+    setButtonState('running');
+    intervalId = setInterval(tick, 1000);
+  }
+
+  function doPause() {
+    clearInterval(intervalId);
+    running = false;
+    setButtonState('paused');
+  }
+
+  function doResume() {
+    if (remainingSeconds <= 0) return;
+    dialCenter.classList.remove('finished');
+    running = true;
+    setButtonState('running');
+    intervalId = setInterval(tick, 1000);
+  }
+
+  // knob 클릭: 시작/일시정지/재시작 토글
+  function knobToggle() {
+    if (running) doPause();
+    else if (remainingSeconds > 0) { dialCenter.classList.remove('finished'); doStart(); }
   }
 
   function reset() {
@@ -781,7 +808,7 @@
     remainingSeconds = 0;
     minuteInput.value = '';
     document.querySelectorAll('.quick-btn').forEach(b => b.classList.remove('active'));
-    startBtn.textContent = '시작';
+    setButtonState('idle');
     updateDisplay();
   }
 
@@ -791,7 +818,7 @@
     dialCenter.classList.remove('finished');
     totalSeconds     = min * 60;
     remainingSeconds = totalSeconds;
-    startBtn.textContent = '시작';
+    setButtonState('idle');
     document.querySelectorAll('.quick-btn').forEach(b => {
       b.classList.toggle('active', parseInt(b.dataset.min) === min);
     });
@@ -799,8 +826,10 @@
   }
 
   // ── Event listeners ──
-  startBtn.addEventListener('click', toggleStart);
-  document.getElementById('knob').addEventListener('click', toggleStart);
+  startBtn.addEventListener('click', doStart);
+  pauseBtn.addEventListener('click', doPause);
+  resumeBtn.addEventListener('click', doResume);
+  document.getElementById('knob').addEventListener('click', knobToggle);
   resetBtn.addEventListener('click', reset);
 
   // 숫자 외 키 차단
