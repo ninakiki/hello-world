@@ -1,4 +1,4 @@
-<!-- Last modified: 2026-04-10 11:05:19 -->
+<!-- Last modified: 2026-04-10 11:11:53 -->
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -76,24 +76,25 @@
   /* ── 테마 선택 ── */
   .theme-switcher {
     display: flex;
-    gap: 12px;
-    margin-top: 14px;
+    gap: 8px;
+    align-items: center;
+    flex-shrink: 0;
   }
 
   .theme-swatch {
-    width: 22px; height: 22px;
+    width: 14px; height: 14px;
     border-radius: 50%;
-    border: 2.5px solid rgba(255,255,255,0.35);
+    border: 2px solid rgba(255,255,255,0.35);
     cursor: pointer;
     transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.25);
     padding: 0;
   }
   .theme-swatch:hover { transform: scale(1.18); }
   .theme-swatch.active {
     border-color: rgba(255,255,255,0.95);
     transform: scale(1.22);
-    box-shadow: 0 0 0 2px rgba(255,255,255,0.4), 0 2px 8px rgba(0,0,0,0.3);
+    box-shadow: 0 0 0 2px rgba(255,255,255,0.4), 0 1px 5px rgba(0,0,0,0.3);
   }
 
   /* ── Timer body ── */
@@ -314,7 +315,6 @@
   }
 
   .btn {
-    flex: 1;
     height: 42px;
     border: none;
     border-radius: 10px;
@@ -324,6 +324,8 @@
     letter-spacing: 0.04em;
     transition: all 0.15s;
   }
+
+  .btn-start { flex: 1; }
 
   .btn-start {
     background: var(--accent-solid);
@@ -335,6 +337,11 @@
   .btn-start:active { transform: scale(0.97); }
 
   .btn-reset {
+    flex: 0 0 auto;
+    padding: 0 14px;
+    height: 36px;
+    align-self: center;
+    font-size: 12px;
     background: var(--ui-input-bg);
     color: var(--fg-primary);
     border: 1px solid var(--ui-border);
@@ -486,18 +493,17 @@
     <div class="controls">
       <button class="btn btn-start" id="startBtn">시작</button>
       <button class="btn btn-reset" id="resetBtn">초기화</button>
+      <div class="theme-switcher">
+        <button class="theme-swatch active" data-theme="blue"  style="background:#8fa8b8;" title="Blue"></button>
+        <button class="theme-swatch"        data-theme="navy"  style="background:#1a2d5a;" title="Navy"></button>
+        <button class="theme-swatch"        data-theme="green" style="background:#2d5a3d;" title="Green"></button>
+      </div>
     </div>
 
   </div><!-- timer-body -->
 
   <div class="desk-shadow"></div>
 
-  <!-- 테마 선택 -->
-  <div class="theme-switcher">
-    <button class="theme-swatch active" data-theme="blue"  style="background:#8fa8b8;" title="Blue"></button>
-    <button class="theme-swatch"        data-theme="navy"  style="background:#1a2d5a;" title="Navy"></button>
-    <button class="theme-swatch"        data-theme="green" style="background:#2d5a3d;" title="Green"></button>
-  </div>
 </div><!-- timer-scene -->
 
 <script>
