@@ -1,4 +1,4 @@
-<!-- Last modified: 2026-04-10 11:19:50 -->
+<!-- Last modified: 2026-04-10 11:31:36 -->
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -16,6 +16,7 @@
 
   /* ── CSS 변수 (테마 1 기본값) ── */
   :root {
+    --scene-bg: #dce8f0;
     --body-bg: #8fa8b8;
     --top-face-from: #9dbdd0;
     --top-face-to: #7d9fb5;
@@ -41,7 +42,7 @@
     justify-content: center;
     padding-bottom: 60px;
     font-family: 'Segoe UI', Arial, sans-serif;
-    background: url('https://png.pngtree.com/background/20250102/original/pngtree-abstract-blur-coffee-shop-or-cafe-restaurant-interior-picture-image_15505703.jpg') center / cover no-repeat;
+    background: var(--scene-bg);
     -webkit-overflow-scrolling: touch;
   }
 
@@ -524,6 +525,7 @@
       motto:      'Flow with your rhythm',
       brand:      'nelma.',
       vars: {
+        '--scene-bg':           '#dce8f0',
         '--body-bg':            '#8fa8b8',
         '--top-face-from':      '#9dbdd0',
         '--top-face-to':        '#7d9fb5',
@@ -550,6 +552,7 @@
       motto:      'One thing at a time.',
       brand:      'neina.',
       vars: {
+        '--scene-bg':           '#f0ebe0',
         '--body-bg':            '#eee9d9',
         '--top-face-from':      '#ddd6c4',
         '--top-face-to':        '#c8c0ac',
@@ -577,6 +580,7 @@
       motto:      'Great things take time.',
       brand:      'neina.',
       vars: {
+        '--scene-bg':           '#e6edea',
         '--body-bg':            '#ede8dc',
         '--top-face-from':      '#ddd7c8',
         '--top-face-to':        '#c8c0ae',
