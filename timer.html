@@ -185,17 +185,17 @@
   }
 
   .time-display {
-    font-size: 36px;
+    font-size: 28px;
     font-weight: 700;
     color: var(--time-display-color);
     line-height: 1;
     letter-spacing: -0.02em;
+    white-space: nowrap;
+    text-shadow: var(--time-display-shadow, none);
     transition: color 0.4s;
   }
 
-  .time-unit {
-    display: none;
-  }
+  .time-unit { display: none; }
 
   .motto {
     position: absolute;
@@ -442,8 +442,7 @@
       </svg>
 
       <div class="dial-center" id="dialCenter">
-        <div class="time-display" id="timeDisplay">0분</div>
-        <div class="time-unit">MINUTES</div>
+        <div class="time-display" id="timeDisplay">0분 0초</div>
       </div>
 
       <div class="motto" id="mottoText">Flow with your rhythm</div>
@@ -467,6 +466,8 @@
           id="minuteInput"
           min="1" max="60"
           placeholder="1~60"
+          inputmode="numeric"
+          pattern="[0-9]*"
         />
         <span class="input-label">분</span>
       </div>
@@ -549,7 +550,8 @@
         '--motto-fg':           '#c8921a',
         '--knob-from':          '#f8f4e4',
         '--knob-to':            '#dbb52e',
-        '--time-display-color': '#1a2d5a',
+        '--time-display-color': '#ffffff',
+        '--time-display-shadow': '0 1px 5px rgba(26,45,90,0.55), 0 0 12px rgba(26,45,90,0.3)',
         '--fg-primary':         'rgba(26,45,90,0.78)',
         '--fg-secondary':       'rgba(26,45,90,0.42)',
         '--ui-input-bg':        'rgba(26,45,90,0.06)',
@@ -575,7 +577,8 @@
         '--motto-fg':           '#d4603a',
         '--knob-from':          '#f5f0e0',
         '--knob-to':            '#c85030',
-        '--time-display-color': '#2d5a3d',
+        '--time-display-color': '#ffffff',
+        '--time-display-shadow': '0 1px 5px rgba(45,90,61,0.55), 0 0 12px rgba(45,90,61,0.3)',
         '--fg-primary':         'rgba(35,25,15,0.82)',
         '--fg-secondary':       'rgba(35,25,15,0.45)',
         '--ui-input-bg':        'rgba(0,0,0,0.07)',
@@ -718,7 +721,9 @@
   const dialCenter  = document.getElementById('dialCenter');
 
   function updateDisplay() {
-    timeDisplay.textContent = `${Math.floor(remainingSeconds / 60)}분`;
+    const m = Math.floor(remainingSeconds / 60);
+    const s = remainingSeconds % 60;
+    timeDisplay.textContent = `${m}분 ${s}초`;
     drawArc(remainingSeconds / 3600);
   }
 
@@ -792,14 +797,26 @@
   document.getElementById('knob').addEventListener('click', toggleStart);
   resetBtn.addEventListener('click', reset);
 
-  minuteInput.addEventListener('input', () => {
-    const val = parseInt(minuteInput.value, 10);
-    if (!isNaN(val) && val >= 1 && val <= 60) {
-      document.querySelectorAll('.quick-btn').forEach(b => b.classList.remove('active'));
-      setTime();
-    }
+  // 숫자 외 키 차단
+  minuteInput.addEventListener('keydown', e => {
+    const allowed = ['Backspace','Delete','Tab','Enter','ArrowLeft','ArrowRight','ArrowUp','ArrowDown'];
+    if (!allowed.includes(e.key) && !/^[0-9]$/.test(e.key)) e.preventDefault();
+    if (e.key === 'Enter') minuteInput.blur();
   });
-  minuteInput.addEventListener('keydown', e => { if (e.key === 'Enter') minuteInput.blur(); });
+
+  minuteInput.addEventListener('input', () => {
+    let val = parseInt(minuteInput.value, 10);
+    if (isNaN(val) || val < 1) return;
+    if (val > 60) { val = 60; minuteInput.value = 60; }
+    document.querySelectorAll('.quick-btn').forEach(b => b.classList.remove('active'));
+    setTime();
+  });
+
+  minuteInput.addEventListener('blur', () => {
+    let val = parseInt(minuteInput.value, 10);
+    if (isNaN(val) || val < 1) { minuteInput.value = ''; return; }
+    if (val > 60) { minuteInput.value = 60; setTime(); }
+  });
 
   document.querySelectorAll('.quick-btn').forEach(btn => {
     btn.addEventListener('click', () => {
